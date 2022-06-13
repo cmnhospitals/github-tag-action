@@ -6,11 +6,15 @@ runs:
   image: 'Dockerfile'
 outputs:
   new_tag:
-    description: 'Generated tag'
+    description: 'The value of the newly created tag.'
+  new_version:
+    description: 'The value of the newly created tag without the prefix.'
   tag:
-    description: 'The latest tag after running this action'
+    description: 'The value of the tag before running this action.'
+  version:
+    description: 'The value of the tag before running this action without the prefix.'
   part:
-    description: 'The part of version which was bumped'
+    description: 'The part of version which was bumped.'
 branding:
   icon: 'git-merge'  
   color: 'purple'
