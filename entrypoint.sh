@@ -35,10 +35,24 @@ current_branch=$(git rev-parse --abbrev-ref HEAD)
 pre_release="true"
 IFS=',' read -ra branch <<< "$release_branches"
 for b in "${branch[@]}"; do
-    echo "Is $b a match for ${current_branch}"
-    if [[ "${current_branch}" =~ $b ]]
+    echo -n "Is $b a match for ${current_branch}?: "
+    if [[ $b == *.* ]]
     then
-        pre_release="false"
+        if [[ "${current_branch}" =~ $b ]]
+        then
+            echo "yes"
+            pre_release="false"
+        else
+            echo "no"
+        fi
+    else
+        if [[ "${current_branch}" == $b ]]
+        then
+            echo "yes"
+            pre_release="false"
+        else
+            echo "no"
+        fi
     fi
 done
 echo "pre_release = $pre_release"
