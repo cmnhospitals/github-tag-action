@@ -100,8 +100,8 @@ commit=$(git rev-parse HEAD)
 
 if [ "$tag_commit" == "$commit" ]; then
     echo "No new commits since previous tag. Skipping."
-    echo "tag=$tag" >> $GITHUB_ENV
-    echo "version=$version" >> $GITHUB_ENV
+    echo "tag=$tag" >> $GITHUB_OUTPUT
+    echo "version=$version" >> $GITHUB_OUTPUT
     exit 0
 fi
 
@@ -116,10 +116,10 @@ case "$log" in
     *#minor* ) new=$prefix$(semver -i minor $version); new_version=${new#"$prefix"}; part="minor";;
     *#patch* ) new=$prefix$(semver -i patch $version); new_version=${new#"$prefix"}; part="patch";;
     *#none* )
-        echo "Default bump was set to none. Skipping."; echo "tag=$tag" >> $GITHUB_ENV; echo "version=$version" >> $GITHUB_ENV; exit 0;;
+        echo "Default bump was set to none. Skipping."; echo "tag=$tag" >> $GITHUB_OUTPUT; echo "version=$version" >> $GITHUB_OUTPUT; exit 0;;
     * )
         if [ "$default_semvar_bump" == "none" ]; then
-            echo "Default bump was set to none. Skipping."; echo "tag=$tag" >> $GITHUB_ENV; echo "version=$version" >> $GITHUB_ENV; exit 0
+            echo "Default bump was set to none. Skipping."; echo "tag=$tag" >> $GITHUB_OUTPUT; echo "version=$version" >> $GITHUB_OUTPUT; exit 0
         else
             new=$prefix$(semver -i "${default_semvar_bump}" "${version}"); new_version=${new#"$prefix"}; part=$default_semvar_bump
         fi
@@ -148,11 +148,11 @@ fi
 echo -e "Bumping tag ${tag} - Version: ${version} \n\tNew tag: ${new} \n\tNew version: ${new_version}"
 
 # set outputs
-echo "tag=$tag" >> $GITHUB_ENV
-echo "version=$version" >> $GITHUB_ENV
-echo "new_tag=$new" >> $GITHUB_ENV
-echo "new_version=$new_version" >> $GITHUB_ENV
-echo "part=$part" >> $GITHUB_ENV
+echo "tag=$tag" >> $GITHUB_OUTPUT
+echo "version=$version" >> $GITHUB_OUTPUT
+echo "new_tag=$new" >> $GITHUB_OUTPUT
+echo "new_version=$new_version" >> $GITHUB_OUTPUT
+echo "part=$part" >> $GITHUB_OUTPUT
 
 # use dry run to determine the next tag
 if $dryrun
