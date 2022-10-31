@@ -32,6 +32,11 @@ echo -e "\tVERBOSE: ${verbose}"
 
 current_branch=$(git branch --show-current)
 
+if [[ "${current_branch}" == "" ]]
+then
+    current_branch=${GITHUB_HEAD_REF}
+fi
+
 pre_release="true"
 IFS=',' read -ra branch <<< "$release_branches"
 for b in "${branch[@]}"; do
