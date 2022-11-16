@@ -143,6 +143,15 @@ if [ ! -z $custom_tag ]
 then
     new="$prefix$custom_tag"
     new_version=${new#"$prefix"}
+    if $pre_release
+    then
+        # Already a prerelease available, bump it. else start at .0
+        if [[ "$tag" == *"$new"* ]]; then
+            new=$prefix$(semver -i prerelease "${custom_tag}" --preid "${suffix}"); new_version=${new#"$prefix"}; part="pre-$part"
+        else
+            new="$new-$suffix.0"; new_version=${new#"$prefix"}; part="pre-$part"
+        fi
+    fi
 fi
 
 echo -e "Bumping tag ${tag} - Version: ${version} \n\tNew tag: ${new} \n\tNew version: ${new_version}"
