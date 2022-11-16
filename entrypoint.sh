@@ -112,16 +112,16 @@ then
 fi
 
 case "$log" in
-    *#major* ) new=$prefix$(semver -i major $version); new_version=${new#"$prefix"}; part="major";;
-    *#minor* ) new=$prefix$(semver -i minor $version); new_version=${new#"$prefix"}; part="minor";;
-    *#patch* ) new=$prefix$(semver -i patch $version); new_version=${new#"$prefix"}; part="patch";;
+    *#major* ) new=$prefix$(semver -i major $version -c); new_version=${new#"$prefix"}; part="major";;
+    *#minor* ) new=$prefix$(semver -i minor $version -c); new_version=${new#"$prefix"}; part="minor";;
+    *#patch* ) new=$prefix$(semver -i patch $version -c); new_version=${new#"$prefix"}; part="patch";;
     *#none* )
         echo "Default bump was set to none. Skipping."; echo "tag=$tag" >> $GITHUB_OUTPUT; echo "version=$version" >> $GITHUB_OUTPUT; exit 0;;
     * )
         if [ "$default_semvar_bump" == "none" ]; then
             echo "Default bump was set to none. Skipping."; echo "tag=$tag" >> $GITHUB_OUTPUT; echo "version=$version" >> $GITHUB_OUTPUT; exit 0
         else
-            new=$prefix$(semver -i "${default_semvar_bump}" "${version}"); new_version=${new#"$prefix"}; part=$default_semvar_bump
+            new=$prefix$(semver -i "${default_semvar_bump}" "${version}" -c); new_version=${new#"$prefix"}; part=$default_semvar_bump
         fi
         ;;
 esac
@@ -130,7 +130,7 @@ if $pre_release
 then
     # Already a prerelease available, bump it. else start at .0
     if [[ "$tag" == *"$new"* ]]; then
-        new=$prefix$(semver -i prerelease "${version}" --preid "${suffix}"); new_version=${new#"$prefix"}; part="pre-$part"
+        new=$prefix$(semver -i prerelease "${version}" --preid "${suffix}" -c); new_version=${new#"$prefix"}; part="pre-$part"
     else
         new="$new-$suffix.0"; new_version=${new#"$prefix"}; part="pre-$part"
     fi
@@ -147,7 +147,7 @@ then
     then
         # Already a prerelease available, bump it. else start at .0
         if [[ "$tag" == *"$new"* ]]; then
-            new=$prefix$(semver -i prerelease "${custom_tag}" --preid "${suffix}"); new_version=${new#"$prefix"}; part="pre-$part"
+            new=$prefix$(semver -i prerelease "${custom_tag}" --preid "${suffix}" -c); new_version=${new#"$prefix"}; part="pre-$part"
         else
             new="$new-$suffix.0"; new_version=${new#"$prefix"}; part="pre-$part"
         fi
