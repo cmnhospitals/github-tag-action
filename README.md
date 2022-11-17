@@ -45,6 +45,7 @@ _NOTE: set the fetch-depth for `actions/checkout@v3` to be sure you retrieve all
 - **SOURCE** *(optional)* - Operate on a relative path under $GITHUB_WORKSPACE.
 - **DRY_RUN** *(optional)* - Determine the next version without tagging the branch. The workflow can use the outputs `new_tag` and `tag` in subsequent steps. Possible values are ```true``` and ```false``` (default).
 - **INITIAL_VERSION** *(optional)* - Set initial version before bump. Default `0.0.0`.
+- **CUSTOM_VERSION** *(optional)* - Set custom major.minor version before bump. This setting will allow us to pass in a major.minor version (e.g., 2.3) and then add the patch number dynamically based on tags that already exist in your chosen context. **Using this setting will force DEFAULT_BUMP to 'patch' regardless of what is passed in**
 - **TAG_CONTEXT** *(optional)* - Set the context of the previous tag. Possible values are `repo` (default) or `branch`.
 - **PRERELEASE_SUFFIX** *(optional)* - Suffix for your prerelease versions, `beta` by default. Note this will only be used if a prerelease branch.
 - **VERBOSE** *(optional)* - Print git logs. For some projects these logs may be very large. Possible values are ```true``` (default) and ```false```. 

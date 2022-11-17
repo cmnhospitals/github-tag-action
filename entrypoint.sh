@@ -10,11 +10,17 @@ custom_tag=${CUSTOM_TAG}
 source=${SOURCE:-.}
 dryrun=${DRY_RUN:-false}
 initial_version=${INITIAL_VERSION:-0.0.0}
+custom_version=${CUSTOM_VERSION}
 tag_context=${TAG_CONTEXT:-repo}
 suffix=${PRERELEASE_SUFFIX:-beta}
 verbose=${VERBOSE:-false}
 # since https://github.blog/2022-04-12-git-security-vulnerability-announced/ runner uses?
 git config --global --add safe.directory /github/workspace
+
+# if custom_version is set update default_semver_bump to patch
+if [[ -n "${custom_version}" ]]; then
+  default_semvar_bump="patch"
+fi
 
 cd ${GITHUB_WORKSPACE}/${source}
 
@@ -26,12 +32,14 @@ echo -e "\tCUSTOM_TAG: ${custom_tag}"
 echo -e "\tSOURCE: ${source}"
 echo -e "\tDRY_RUN: ${dryrun}"
 echo -e "\tINITIAL_VERSION: ${initial_version}"
+echo -e "\tCUSTOM_VERSION: ${custom_version}"
 echo -e "\tTAG_CONTEXT: ${tag_context}"
 echo -e "\tPRERELEASE_SUFFIX: ${suffix}"
 echo -e "\tVERBOSE: ${verbose}"
 
 current_branch=$(git branch --show-current)
 
+#if current_branch is an empty string, we are in detached head state and should use the HEAD_REF env var
 if [[ "${current_branch}" == "" ]]
 then
     current_branch=${GITHUB_HEAD_REF}
@@ -67,17 +75,50 @@ git fetch --tags
     
 tagFmt="^($prefix)?[0-9]+\.[0-9]+\.[0-9]+(-$suffix\.[0-9]+)?$"
 
-# get latest tag that looks like a semver (with or without v)
+# get latest tag that looks like a semver (with or without prefix)
 case "$tag_context" in
     *repo*) 
-        taglist="$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "$tagFmt")"
-        tag="$(echo "$taglist" | head -n 1)"
-        version=${tag#"$prefix"}
+        if [ -n "$custom_version" ]
+        then
+            echo "Using custom tag: $custom_version"
+            taglist="$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^$prefix$custom_version")"
+            #if taglist is empty, add .0 to the end of custom_version and set tag to that
+            if [ -z "$taglist" ]
+            then
+                tag="$prefix$custom_version.0"
+                new_minor_version=true
+            else
+                tag="$(echo "$taglist" | head -n 1)"
+                new_minor_version=false
+            fi
+            version=${tag#"$prefix"}
+        else
+            taglist="$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "$tagFmt")"
+            tag="$(echo "$taglist" | head -n 1)"
+            version=${tag#"$prefix"}
+        fi
         ;;
     *branch*) 
-        taglist="$(git tag --list --merged HEAD --sort=-v:refname | grep -E "$tagFmt")"
-        tag="$(echo "$taglist" | head -n 1)"
-        version=${tag#"$prefix"}
+        #if custom tag is set, find all of the similar tags and use the highest one
+        if [ -n "$custom_version" ]
+        then
+            echo "Using custom tag: $custom_version"
+            taglist="$(git tag --list --merged HEAD --sort=-v:refname | grep -E "^$prefix$custom_version")"
+            #if taglist is empty, add .0 to the end of custom_version and set tag to that
+            if [ -z "$taglist" ]
+            then
+                tag="$prefix$custom_version.0"
+                new_minor_version=true
+            else
+                tag="$(echo "$taglist" | head -n 1)"
+                new_minor_version=false
+            fi
+            version=${tag#"$prefix"}
+        else
+            taglist="$(git tag --list --merged HEAD --sort=-v:refname | grep -E "$tagFmt")"
+            tag="$(echo "$taglist" | head -n 1)"
+            version=${tag#"$prefix"}
+        fi
         ;;
     * ) echo "Unrecognized context"; exit 1;;
 esac
@@ -111,6 +152,7 @@ then
   echo $log
 fi
 
+# get the semver bump
 case "$log" in
     *#major* ) new=$prefix$(semver -i major $version -c); new_version=${new#"$prefix"}; part="major";;
     *#minor* ) new=$prefix$(semver -i minor $version -c); new_version=${new#"$prefix"}; part="minor";;
@@ -121,7 +163,13 @@ case "$log" in
         if [ "$default_semvar_bump" == "none" ]; then
             echo "Default bump was set to none. Skipping."; echo "tag=$tag" >> $GITHUB_OUTPUT; echo "version=$version" >> $GITHUB_OUTPUT; exit 0
         else
-            new=$prefix$(semver -i "${default_semvar_bump}" "${version}" -c); new_version=${new#"$prefix"}; part=$default_semvar_bump
+            #if new_minor_version is true, we don't need to bump anything, so just set new, new_version, and part
+            if [ "$new_minor_version" == "true" ]
+            then
+                new=$prefix$(semver $version -c); new_version=${new#"$prefix"}; part="none";
+            else
+                new=$prefix$(semver -i "$default_semvar_bump" "$version" -c); new_version=${new#"$prefix"}; part=$default_semvar_bump;
+            fi
         fi
         ;;
 esac
@@ -129,7 +177,7 @@ esac
 if $pre_release
 then
     # Already a prerelease available, bump it. else start at .0
-    if [[ "$tag" == *"$new"* ]]; then
+    if [[ "$tag" == *"$new"* ]] && [[ "$new_minor_version" == "false" ]]; then
         new=$prefix$(semver -i prerelease "${version}" --preid "${suffix}" -c); new_version=${new#"$prefix"}; part="pre-$part"
     else
         new="$new-$suffix.0"; new_version=${new#"$prefix"}; part="pre-$part"
@@ -139,19 +187,12 @@ fi
 echo $new
 echo $part
 
+# if $custom_tag is set, use that instead of the calculated tag
+
 if [ ! -z $custom_tag ]
 then
     new="$prefix$custom_tag"
     new_version=${new#"$prefix"}
-    if $pre_release
-    then
-        # Already a prerelease available, bump it. else start at .0
-        if [[ "$tag" == *"$new"* ]]; then
-            new=$prefix$(semver -i prerelease "${custom_tag}" --preid "${suffix}" -c); new_version=${new#"$prefix"}; part="pre-$part"
-        else
-            new="$new-$suffix.0"; new_version=${new#"$prefix"}; part="pre-$part"
-        fi
-    fi
 fi
 
 echo -e "Bumping tag ${tag} - Version: ${version} \n\tNew tag: ${new} \n\tNew version: ${new_version}"
