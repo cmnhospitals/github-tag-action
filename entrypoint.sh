@@ -3,6 +3,7 @@
 set -o pipefail
 
 # config
+append_commit_SHA=${APPEND_COMMIT_SHA:-false}
 default_semvar_bump=${DEFAULT_BUMP:-minor}
 prefix=${PREFIX:-v}
 release_branches=${RELEASE_BRANCHES:-master,main}
@@ -25,6 +26,7 @@ fi
 cd ${GITHUB_WORKSPACE}/${source}
 
 echo "*** CONFIGURATION ***"
+echo -e "\tAPPEND_COMMIT_SHA: ${append_commit_SHA}"
 echo -e "\tDEFAULT_BUMP: ${default_semvar_bump}"
 echo -e "\tPREFIX: ${prefix}"
 echo -e "\tRELEASE_BRANCHES: ${release_branches}"
@@ -166,7 +168,7 @@ case "$log" in
             #if new_minor_version is true, we don't need to bump anything, so just set new, new_version, and part
             if [ "$new_minor_version" == "true" ]
             then
-                new=$prefix$(semver $version -c); new_version=${new#"$prefix"}; part="none";
+                new=$prefix$(semver $version); new_version=${new#"$prefix"}; part="none";
             else
                 new=$prefix$(semver -i "$default_semvar_bump" "$version" -c); new_version=${new#"$prefix"}; part=$default_semvar_bump;
             fi
@@ -178,13 +180,12 @@ if $pre_release
 then
     # Already a prerelease available, bump it. else start at .0
     if [[ "$tag" == *"$new"* ]] && [[ "$new_minor_version" == "false" ]]; then
-        new=$prefix$(semver -i prerelease "${version}" --preid "${suffix}" -c); new_version=${new#"$prefix"}; part="pre-$part"
+        new=$prefix$(semver -i prerelease "${version}" --preid "${suffix}"); new_version=${new#"$prefix"}; part="prerelease"
     else
-        new="$new-$suffix.0"; new_version=${new#"$prefix"}; part="pre-$part"
+        new="$new-$suffix.0"; new_version=${new#"$prefix"}; part="prerelease"
     fi
 fi
 
-echo $new
 echo $part
 
 # if $custom_tag is set, use that instead of the calculated tag
@@ -193,6 +194,14 @@ if [ ! -z $custom_tag ]
 then
     new="$prefix$custom_tag"
     new_version=${new#"$prefix"}
+fi
+
+#if append_commit is true, append the commit hash to the end of the tag and version
+if [ $append_commit_SHA == "true" ]
+then
+    commit=$(echo $GITHUB_SHA | cut -c-8)
+    new="$new+$commit"
+    new_version="$new_version+$commit"
 fi
 
 echo -e "Bumping tag ${tag} - Version: ${version} \n\tNew tag: ${new} \n\tNew version: ${new_version}"
