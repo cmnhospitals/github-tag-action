@@ -143,7 +143,7 @@ fi
 # get current commit hash
 commit=$(git rev-parse HEAD)
 
-if [new_minor_version == "false"]
+if [ $new_minor_version == "false"]
 then
     # get current commit hash for tag
     tag_commit=$(git rev-list -n 1 "${tag}")
