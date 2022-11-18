@@ -165,9 +165,9 @@ fi
 
 # get the semver bump
 case "$log" in
-    *#major* ) new=$prefix$(semver -i major $version -c); new_version=${new#"$prefix"}; part="major";;
-    *#minor* ) new=$prefix$(semver -i minor $version -c); new_version=${new#"$prefix"}; part="minor";;
-    *#patch* ) new=$prefix$(semver -i patch $version -c); new_version=${new#"$prefix"}; part="patch";;
+    *#major* ) new=$prefix$(semver -i major $version); new_version=${new#"$prefix"}; part="major";;
+    *#minor* ) new=$prefix$(semver -i minor $version); new_version=${new#"$prefix"}; part="minor";;
+    *#patch* ) new=$prefix$(semver -i patch $version); new_version=${new#"$prefix"}; part="patch";;
     *#none* )
         echo "Default bump was set to none. Skipping."; echo "tag=$tag" >> $GITHUB_OUTPUT; echo "version=$version" >> $GITHUB_OUTPUT; exit 0;;
     * )
@@ -179,7 +179,7 @@ case "$log" in
             then
                 new=$prefix$(semver $version); new_version=${new#"$prefix"}; part="none";
             else
-                new=$prefix$(semver -i "$default_semvar_bump" "$version" -c); new_version=${new#"$prefix"}; part=$default_semvar_bump;
+                new=$prefix$(semver -i "$default_semvar_bump" "$version"); new_version=${new#"$prefix"}; part=$default_semvar_bump;
             fi
         fi
         ;;
