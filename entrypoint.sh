@@ -79,10 +79,10 @@ tagFmt="^($prefix)?[0-9]+\.[0-9]+\.[0-9]+(-$suffix\.[0-9]+)?$"
 
 # get latest tag that looks like a semver (with or without prefix)
 case "$tag_context" in
-    *repo*) 
+    *repo*)
         if [ -n "$custom_version" ]
         then
-            echo "Using custom tag: $custom_version"
+            echo "Using custom version: $custom_version"
             taglist="$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^$prefix$custom_version")"
             #if taglist is empty, add .0 to the end of custom_version and set tag to that
             if [ -z "$taglist" ]
@@ -104,7 +104,7 @@ case "$tag_context" in
         #if custom tag is set, find all of the similar tags and use the highest one
         if [ -n "$custom_version" ]
         then
-            echo "Using custom tag: $custom_version"
+            echo "Using custom version: $custom_version"
             taglist="$(git tag --list --merged HEAD --sort=-v:refname | grep -E "^$prefix$custom_version")"
             #if taglist is empty, add .0 to the end of custom_version and set tag to that
             if [ -z "$taglist" ]
@@ -132,20 +132,28 @@ then
     tag="$prefix$initial_version"
     version=${tag#"$prefix"}
 else
-    log=$(git log "${tag}"..HEAD --pretty='%B')
+    if [ $new_minor_version == "true" ]
+    then
+        log=$(git log --pretty='%B' -1)
+    else
+        log=$(git log --pretty='%B' "${tag}"..HEAD)
+    fi
 fi
-
-# get current commit hash for tag
-tag_commit=$(git rev-list -n 1 "${tag}")
 
 # get current commit hash
 commit=$(git rev-parse HEAD)
 
-if [ "$tag_commit" == "$commit" ]; then
-    echo "No new commits since previous tag. Skipping."
-    echo "tag=$tag" >> $GITHUB_OUTPUT
-    echo "version=$version" >> $GITHUB_OUTPUT
-    exit 0
+if [new_minor_version == "false"]
+then
+    # get current commit hash for tag
+    tag_commit=$(git rev-list -n 1 "${tag}")
+
+    if [ "$tag_commit" == "$commit" ]; then
+        echo "No new commits since previous tag. Skipping."
+        echo "tag=$tag" >> $GITHUB_OUTPUT
+        echo "version=$version" >> $GITHUB_OUTPUT
+        exit 0
+    fi
 fi
 
 # echo log if verbose is wanted
@@ -199,9 +207,9 @@ fi
 #if append_commit is true, append the commit hash to the end of the tag and version
 if [ $append_commit_SHA == "true" ]
 then
-    commit=$(echo $GITHUB_SHA | cut -c-8)
-    new="$new+$commit"
-    new_version="$new_version+$commit"
+    short_commit=$(echo $commit | cut -c-8)
+    new="$new+$short_commit"
+    new_version="$new_version+$short_commit"
 fi
 
 echo -e "Bumping tag ${tag} - Version: ${version} \n\tNew tag: ${new} \n\tNew version: ${new_version}"
