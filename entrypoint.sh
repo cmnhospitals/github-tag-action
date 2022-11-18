@@ -48,7 +48,7 @@ current_branch=$(git branch --show-current)
 if [[ "${current_branch}" == "" ]]
 then
     current_branch=${GITHUB_HEAD_REF}
-    commit=$(git rev-parse $GITHUB_HEAD_REF)
+    commit=$(git rev-parse origin/$GITHUB_HEAD_REF)
 fi
 
 pre_release="true"
