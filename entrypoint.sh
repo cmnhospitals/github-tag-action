@@ -39,12 +39,16 @@ echo -e "\tTAG_CONTEXT: ${tag_context}"
 echo -e "\tPRERELEASE_SUFFIX: ${suffix}"
 echo -e "\tVERBOSE: ${verbose}"
 
+# get current commit hash
+commit=$(git rev-parse HEAD)
+
 current_branch=$(git branch --show-current)
 
 #if current_branch is an empty string, we are in detached head state and should use the HEAD_REF env var
 if [[ "${current_branch}" == "" ]]
 then
     current_branch=${GITHUB_HEAD_REF}
+    commit=$(git rev-parse $GITHUB_HEAD_REF)
 fi
 
 pre_release="true"
@@ -139,9 +143,6 @@ else
         log=$(git log --pretty='%B' "${tag}"..HEAD)
     fi
 fi
-
-# get current commit hash
-commit=$(git rev-parse HEAD)
 
 if [ $new_minor_version == "false" ]
 then
