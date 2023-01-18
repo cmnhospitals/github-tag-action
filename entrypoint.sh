@@ -89,7 +89,7 @@ case "$tag_context" in
         if [ -n "$custom_version" ]
         then
             echo "Using custom version: $custom_version"
-            taglist="$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^$prefix$custom_version")"
+            taglist="$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "$tagFmt")"
             #if taglist is empty, add .0 to the end of custom_version and set tag to that
             if [ -z "$taglist" ]
             then
