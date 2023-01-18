@@ -41,8 +41,10 @@ echo -e "\tVERBOSE: ${verbose}"
 
 # get current commit hash
 commit=$(git rev-parse HEAD)
+echo "commit = $commit"
 
 current_branch=$(git branch --show-current)
+echo "current_branch = $current_branch"
 
 #if current_branch is an empty string, we are in detached head state and should use the HEAD_REF env var
 if [[ "${current_branch}" == "" ]]
@@ -128,6 +130,11 @@ case "$tag_context" in
         ;;
     * ) echo "Unrecognized context"; exit 1;;
 esac
+
+echo "new_minor_version = $new_minor_version"
+echo "taglist = $taglist"
+echo "tag = $tag"
+echo "version = $version"
 
 # if there are none, start tags at INITIAL_VERSION which defaults to ($prefix0.0.0)
 if [ -z "$tag" ]
