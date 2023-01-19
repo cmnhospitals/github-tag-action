@@ -83,13 +83,20 @@ git fetch --tags
     
 tagFmt="^($prefix)?[0-9]+\.[0-9]+\.[0-9]+(-$suffix\.[0-9]+)?$"
 
-# get latest tag that looks like a semver (with or without prefix)
+# get latest tags based on context
 case "$tag_context" in
     *repo*)
+        #if this is a prerelease grab all of the tags, including prerelease tags, otherwise just grab a list of the non-prerelease tags
+        if [ $pre_release == "true" ]
+        then
+            taglist="$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^$prefix$custom_version")"
+        else
+            taglist="$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "$tagFmt")"
+        fi
+
         if [ -n "$custom_version" ]
         then
             echo "Using custom version: $custom_version"
-            taglist="$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "$tagFmt")"
             #if taglist is empty, add .0 to the end of custom_version and set tag to that
             if [ -z "$taglist" ]
             then
@@ -99,19 +106,22 @@ case "$tag_context" in
                 tag="$(echo "$taglist" | head -n 1)"
                 new_minor_version=false
             fi
-            version=${tag#"$prefix"}
         else
-            taglist="$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "$tagFmt")"
             tag="$(echo "$taglist" | head -n 1)"
-            version=${tag#"$prefix"}
         fi
         ;;
-    *branch*) 
+    *branch*)
+        #if this is a prerelease grab all of the tags, including prerelease tags, otherwise just grab a list of the non-prerelease tags
+        if [ $pre_release == "true" ]
+        then
+            taglist="$(git tag --list --merged HEAD --sort=-v:refname | grep -E "^$prefix$custom_version")"
+        else
+            taglist="$(git tag --list --merged HEAD --sort=-v:refname | grep -E "$tagFmt")"
+        fi
         #if custom tag is set, find all of the similar tags and use the highest one
         if [ -n "$custom_version" ]
         then
             echo "Using custom version: $custom_version"
-            taglist="$(git tag --list --merged HEAD --sort=-v:refname | grep -E "^$prefix$custom_version")"
             #if taglist is empty, add .0 to the end of custom_version and set tag to that
             if [ -z "$taglist" ]
             then
@@ -121,15 +131,14 @@ case "$tag_context" in
                 tag="$(echo "$taglist" | head -n 1)"
                 new_minor_version=false
             fi
-            version=${tag#"$prefix"}
         else
-            taglist="$(git tag --list --merged HEAD --sort=-v:refname | grep -E "$tagFmt")"
             tag="$(echo "$taglist" | head -n 1)"
-            version=${tag#"$prefix"}
         fi
         ;;
     * ) echo "Unrecognized context"; exit 1;;
 esac
+
+version=${tag#"$prefix"}
 
 echo "new_minor_version = $new_minor_version"
 echo "taglist = $taglist"
