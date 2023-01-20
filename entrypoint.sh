@@ -83,67 +83,63 @@ git fetch --tags
     
 tagFmt="^($prefix)?[0-9]+\.[0-9]+\.[0-9]+(-$suffix\.[0-9]+)?$"
 
-# get latest tags based on context
+# get latest tag that looks like a semver (with or without prefix)
 case "$tag_context" in
     *repo*)
-        #if this is a prerelease grab all of the tags, including prerelease tags, otherwise just grab a list of the non-prerelease tags
-        if [ $pre_release == "true" ]
-        then
-            taglist="$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^$prefix$custom_version")"
-        else
-            taglist="$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "$tagFmt")"
-        fi
-
         if [ -n "$custom_version" ]
         then
             echo "Using custom version: $custom_version"
+            #get all of the tags
+            taglist="$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^$prefix$custom_version")"
+            #strip off the prefix from each tag
+            taglist=${taglist//"$prefix"}
+            #order the list according to semver rules in decending order so the greatest version number is on top
+            taglist="$(semver $taglist | tac)"
             #if taglist is empty, add .0 to the end of custom_version and set tag to that
             if [ -z "$taglist" ]
             then
                 tag="$prefix$custom_version.0"
                 new_minor_version=true
             else
-                tag="$(echo "$taglist" | head -n 1)"
+                tag="$prefix$(echo "$taglist" | head -n 1)"
                 new_minor_version=false
             fi
+            version=${tag#"$prefix"}
         else
-            tag="$(echo "$taglist" | head -n 1)"
+            taglist="$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "$tagFmt")"
+            tag="$prefix$(echo "$taglist" | head -n 1)"
+            version=${tag#"$prefix"}
         fi
         ;;
-    *branch*)
-        #if this is a prerelease grab all of the tags, including prerelease tags, otherwise just grab a list of the non-prerelease tags
-        if [ $pre_release == "true" ]
-        then
-            taglist="$(git tag --list --merged HEAD --sort=-v:refname | grep -E "^$prefix$custom_version")"
-        else
-            taglist="$(git tag --list --merged HEAD --sort=-v:refname | grep -E "$tagFmt")"
-        fi
+    *branch*) 
         #if custom tag is set, find all of the similar tags and use the highest one
         if [ -n "$custom_version" ]
         then
             echo "Using custom version: $custom_version"
+            #get all of the tags
+            taglist="$(git tag --list --merged HEAD --sort=-v:refname | grep -E "^$prefix$custom_version")"
+            #strip off the prefix from each tag
+            taglist=${taglist//"$prefix"}
+            #order the list according to semver rules in decending order so the greatest version number is on top
+            taglist="$(semver $taglist | tac)"
             #if taglist is empty, add .0 to the end of custom_version and set tag to that
             if [ -z "$taglist" ]
             then
                 tag="$prefix$custom_version.0"
                 new_minor_version=true
             else
-                tag="$(echo "$taglist" | head -n 1)"
+                tag="$prefix$(echo "$taglist" | head -n 1)"
                 new_minor_version=false
             fi
+            version=${tag#"$prefix"}
         else
+            taglist="$prefix$(git tag --list --merged HEAD --sort=-v:refname | grep -E "$tagFmt")"
             tag="$(echo "$taglist" | head -n 1)"
+            version=${tag#"$prefix"}
         fi
         ;;
     * ) echo "Unrecognized context"; exit 1;;
 esac
-
-version=${tag#"$prefix"}
-
-echo "new_minor_version = $new_minor_version"
-echo "taglist = $taglist"
-echo "tag = $tag"
-echo "version = $version"
 
 # if there are none, start tags at INITIAL_VERSION which defaults to ($prefix0.0.0)
 if [ -z "$tag" ]
@@ -176,7 +172,11 @@ fi
 # echo log if verbose is wanted
 if $verbose
 then
-  echo $log
+    echo -e "Git Log:\n$log"
+    echo "new_minor_version = $new_minor_version"
+    echo -e "taglist:\n$taglist"
+    echo "tag = $tag"
+    echo "version = $version"
 fi
 
 # get the semver bump
@@ -227,9 +227,13 @@ then
     short_commit=$(echo $commit | cut -c-8)
     new="$new+$short_commit"
     new_version="$new_version+$short_commit"
+
+    echo -e "Bumping previous version: ${version} --> ${new_version%"+$short_commit"}\nAppending shortened commit hash to the end of the tag and version strings:\n\tNew Tag: $new\n\tNew Version: $new_version"
+else
+    echo -e "Bumping previous version: ${version} --> ${new_version}\n\tNew tag: $new \n\tNew version: $new_version"
 fi
 
-echo -e "Bumping tag ${tag} - Version: ${version} \n\tNew tag: ${new} \n\tNew version: ${new_version}"
+
 
 # set outputs
 echo "tag=$tag" >> $GITHUB_OUTPUT
