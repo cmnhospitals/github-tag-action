@@ -91,10 +91,6 @@ case "$tag_context" in
             echo "Using custom version: $custom_version"
             #get all of the tags
             taglist="$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^$prefix$custom_version")"
-            #strip off the prefix from each tag
-            taglist=${taglist//"$prefix"}
-            #order the list according to semver rules in decending order so the greatest version number is on top
-            taglist="$(semver $taglist | tac)"
             #if taglist is empty, add .0 to the end of custom_version and set tag to that
             if [ -z "$taglist" ]
             then
@@ -104,6 +100,10 @@ case "$tag_context" in
                 tag="$prefix$(echo "$taglist" | head -n 1)"
                 new_minor_version=false
             fi
+            #strip off the prefix from each tag
+            taglist=${taglist//"$prefix"}
+            #order the list according to semver rules in decending order so the greatest version number is on top
+            taglist="$(semver $taglist | tac)"
             version=${tag#"$prefix"}
         else
             taglist="$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "$tagFmt")"
@@ -118,10 +118,6 @@ case "$tag_context" in
             echo "Using custom version: $custom_version"
             #get all of the tags
             taglist="$(git tag --list --merged HEAD --sort=-v:refname | grep -E "^$prefix$custom_version")"
-            #strip off the prefix from each tag
-            taglist=${taglist//"$prefix"}
-            #order the list according to semver rules in decending order so the greatest version number is on top
-            taglist="$(semver $taglist | tac)"
             #if taglist is empty, add .0 to the end of custom_version and set tag to that
             if [ -z "$taglist" ]
             then
@@ -131,6 +127,10 @@ case "$tag_context" in
                 tag="$prefix$(echo "$taglist" | head -n 1)"
                 new_minor_version=false
             fi
+            #strip off the prefix from each tag
+            taglist=${taglist//"$prefix"}
+            #order the list according to semver rules in decending order so the greatest version number is on top
+            taglist="$(semver $taglist | tac)"
             version=${tag#"$prefix"}
         else
             taglist="$prefix$(git tag --list --merged HEAD --sort=-v:refname | grep -E "$tagFmt")"
