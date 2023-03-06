@@ -99,11 +99,11 @@ case "$tag_context" in
                 tag="$prefix$custom_version.0"
                 new_minor_version=true
             else
+                taglist="$(semver $taglist | tac)"
                 tag="$prefix$(echo "$taglist" | head -n 1)"
                 new_minor_version=false
             fi
             #order the list according to semver rules in decending order so the greatest version number is on top
-            taglist="$(semver $taglist | tac)"
             version=${tag#"$prefix"}
         else
             taglist="$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "$tagFmt")"
@@ -126,11 +126,11 @@ case "$tag_context" in
                 tag="$prefix$custom_version.0"
                 new_minor_version=true
             else
+                taglist="$(semver $taglist | tac)"
                 tag="$prefix$(echo "$taglist" | head -n 1)"
                 new_minor_version=false
             fi
             #order the list according to semver rules in decending order so the greatest version number is on top
-            taglist="$(semver $taglist | tac)"
             version=${tag#"$prefix"}
         else
             taglist="$prefix$(git tag --list --merged HEAD --sort=-v:refname | grep -E "$tagFmt")"
