@@ -39,9 +39,9 @@ _NOTE: set the fetch-depth for `actions/checkout@v3` to be sure you retrieve all
 
 - **GITHUB_TOKEN** ***(required)*** - Required for permission to tag the repo.
 - **DEFAULT_BUMP** *(optional)* - Which type of bump to use when none explicitly provided (default: `minor`).
-- **PREFIX** *(optional)* - Adds a prefix before version number (default: `v`).
+- **PREFIX** *(optional)* - Adds a prefix before version number (default: no prefix). Use `v` for traditional semantic versioning.
 - **RELEASE_BRANCHES** *(optional)* - Comma separated list of branches (bash reg exp accepted) that will generate the release tags. Other branches and pull-requests generate versions postfixed with the commit hash and do not generate any tag. Examples: `master` or `.*` or `release.*,hotfix.*,master` ...
-- **CUSTOM_TAG** *(optional)* - Set a custom tag, useful when generating tag based on f.ex FROM image in a docker image. **Setting this tag will invalidate any other settings set!**
+- **CUSTOM_TAG** *(optional)* - Set a custom tag, useful when generating tag based on f.ex FROM image in a docker image. **Setting this tag will skip all version calculation logic and use the custom tag directly for optimal performance!**
 - **SOURCE** *(optional)* - Operate on a relative path under $GITHUB_WORKSPACE.
 - **DRY_RUN** *(optional)* - Determine the next version without tagging the branch. The workflow can use the outputs `new_tag` and `tag` in subsequent steps. Possible values are ```true``` and ```false``` (default).
 - **INITIAL_VERSION** *(optional)* - Set initial version before bump. Default `0.0.0`.
