@@ -1,4 +1,4 @@
-FROM node:16-alpine
+FROM node:22-alpine
 LABEL "repository"="https://github.com/cmnhospitals/github-tag-action"
 LABEL "homepage"="https://github.com/cmnhospitals/github-tag-action"
 LABEL "maintainer"="Justin Newman"
