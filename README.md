@@ -12,21 +12,21 @@ A Github Action to automatically bump and tag master, on merge, with the latest 
 
 ### Usage
 
-```Dockerfile
+```yaml
 name: Bump version
 on:
   push:
     branches:
-      - master
+      - main
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: '0'
     - name: Bump version and push tag
-      uses: cmnhospitals/github-tag-action@2.0.0
+      uses: cmnhospitals/github-tag-action@2.4.1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
